@@ -74,6 +74,3 @@ void STC3100::write8(uint8_t addr, uint8_t val) {
 
 void STC3100::write16(uint8_t addr, uint16_t val) {
 }
-
-
-

@@ -1,3 +1,7 @@
+/*
+ * Driver for STC3100 battery fuel gauge chip
+ */
+
 #ifndef STC3100_H
 #define STC3100_H
 
@@ -54,7 +58,3 @@ private:
 };
 
 #endif /* STC3100_H */
-
-
-
-

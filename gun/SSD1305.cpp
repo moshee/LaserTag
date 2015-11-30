@@ -192,7 +192,3 @@ void SSD1305::off(void) {
 	this->command();
 	this->send(0xAE);
 }
-
-
-
-

@@ -1,3 +1,7 @@
+/*
+ * Driver for SSD1305 OLED controller, used in Crystalfontz 128x64 OLED module
+ */
+
 #ifndef _SSD1305_H_
 #define _SSD1305_H_
 
@@ -51,7 +55,3 @@ private:
 };
 
 #endif /* _SSD1305_H_ */
-
-
-
-

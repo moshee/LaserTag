@@ -91,6 +91,7 @@ void setup(void) {
 	OCR1A  = 0x0046;
 
 	// set up timer2 for general purpose ticking
+	// This would be used for 5-second battery check intervals, some timeouts, etc.
 	// ...
 
 	eeprom_read_block(&g_player, (void*)0, sizeof g_player);
@@ -145,14 +146,6 @@ void loop(void) {
 
 	if (bitRead(flags, FLAG_TRIGGER)) {
 		bitClear(flags, FLAG_TRIGGER);
-		// send IR bytes
-		// use the sync word 0x40. This is chosen to give a lot of marks (zero in
-		// this case; the receiver puts out a LOW signal when a valid pulse train
-		// is detected) to grab onto during the multiplexer scan on the receiver
-		// side, while still acting as a sync word.
-		// Data words must be masked in 0x1F.
-		// When receiving, shift in bits until the current byte equals 0xBF to
-		// capture the sync word, then read in 8 more bits for the data word.
 
 		// DEBUG
 		if (g_state.ammo == 0) {
@@ -180,9 +173,10 @@ void loop(void) {
 
 void send_byte(uint8_t x) {
 	// Rough emulation of Philips RC-MM protocol here. Not following the spec
-	// exactly but same general idea with the header and symbols
+	// exactly but same general idea with the header and symbols.
+	// Testing shows the TSOP34338 doesn't work reliably with 6-pulse marks so
+	// I just doubled all of the durations.
 
-	// use TIMSK1[OCIE1A] to enable interrupts during a mark to count out pulses
 	// use TCCR1A[COM1A0] to connect (mark) and disconnect (space) OC1A
 	uint8_t i;
 
@@ -222,12 +216,11 @@ void space(uint8_t n) {
 	wait_pulse(n);
 }
 
+// Spinloop to wait for n pulse times
 void wait_pulse(uint8_t n) {
 	uint8_t i;
 
 	for (i = 0; i < n; i++) {
-		// YES, IT'S AWFUL, but writing the asynchronous code seems more
-		// awful given that we don't have DMA or anything on the AVR.
 		while (!bitRead(TIFR1, TOV1)) {
 			asm volatile("nop");
 		}
