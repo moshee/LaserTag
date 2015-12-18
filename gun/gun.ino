@@ -88,7 +88,7 @@ void setup(void) {
 	TCCR1A = _BV(WGM11);
 	TCCR1B = _BV(WGM13) | _BV(CS10);
 	ICR1   = 0x0068;
-	OCR1A  = 0x0046;
+	OCR1A  = 0x0030;
 
 	// set up timer2 for general purpose ticking
 	// This would be used for 5-second battery check intervals, some timeouts, etc.
@@ -96,7 +96,7 @@ void setup(void) {
 
 	eeprom_read_block(&g_player, (void*)0, sizeof g_player);
 	if (g_player.id == 0xFF) {
-		g_player.id = 0x00;
+		g_player.id = 0x1B; // (00 01 10 11)
 	}
 
 	Serial.begin(57600);
@@ -154,13 +154,11 @@ void loop(void) {
 
 		if (g_state.ammo > 0) {
 			bitSet(flags, FLAG_TX);
-			bitSet(PORTB, PIN_VIBE);
+			//bitSet(PORTB, PIN_VIBE);
 			g_state.ammo--;
 			update_ammo(&g_state, oled);
 			send_byte(g_player.id);
-			send_byte(g_player.id);
-			send_byte(g_player.id);
-			bitClear(PORTB, PIN_VIBE);
+			//bitClear(PORTB, PIN_VIBE);
 			bitClear(flags, FLAG_TX);
 		}
 	}
@@ -180,22 +178,30 @@ void send_byte(uint8_t x) {
 	// use TCCR1A[COM1A0] to connect (mark) and disconnect (space) OC1A
 	uint8_t i;
 
+	// send a bunch of useless edges so the receiver can lock onto the channel
+	// ~630 µs period, 10x = 6.3 ms
+	for (i = 0; i < 20; i++) {
+		mark(12);
+		space(12);
+	}
+
 	mark(30);
 	space(20);
 
-	for (i = 0; i < 4; i++, x >>= 2) {
+	// shift out MSB first
+	for (i = 0; i < 4; i++, x <<= 2) {
 		mark(12);
-		switch (x & 0x03) {
+		switch (x & 0xC0) {
 		case 0x00:
 			space(20);
 			break;
-		case 0x01:
+		case 0x40:
 			space(32);
 			break;
-		case 0x02:
+		case 0x80:
 			space(44);
 			break;
-		case 0x03:
+		case 0xC0:
 			space(56);
 			break;
 		}
